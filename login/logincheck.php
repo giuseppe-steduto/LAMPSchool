@@ -4,7 +4,6 @@ session_start();
 
 require_once '../php-ini' . $_SESSION['suffisso'] . '.php';
 require_once '../lib/funzioni.php';
-@require_once("../lib/sms/php-send.php");
 /*
   Copyright (C) 2015 Pietro Tamburrano
   Questo programma è un software libero; potete redistribuirlo e/o modificarlo secondo i termini della
@@ -90,7 +89,6 @@ if ($password != md5(md5($chiaveuniversale) . $seme) & (!$accessouniversale))
     $sql = "SELECT *,unix_timestamp(ultimamodifica) AS ultmod FROM tbl_utenti WHERE userid='" . $username . "'";
 }
 
-
 $result = eseguiQuery($con, $sql);
 
 if (mysqli_num_rows($result) <= 0) // VERIFICO SE C'E' L'UTENTE
@@ -122,19 +120,23 @@ if (mysqli_num_rows($result) <= 0) // VERIFICO SE C'E' L'UTENTE
 }
 else  // UTENTE TROVATO
 {
-
-
     $data = mysqli_fetch_array($result);
+    $_SESSION['idtelegram'] = $data['idtelegram'];
+    if(isBotOnline($token)){ //bot_telegram controllo se il bot è attivo grazie alla funzione implementanta in ../lib/funzioni.php
+      $telegram_otp = rand(10000, 99999); //genero l'otp per telegram a 5 cifre numeriche
+      if(sendTelegramMessage($_SESSION['idtelegram'], $telegram_otp, $token)){
+        //va all'inserimento dell'otp per confermare l'accesso
+      }
+      else {
+        //scrive nel file di log che l'operazione non è andata a buob fine
+      }
+    }
     $_SESSION['userid'] = $data['userid'];
     $_SESSION['tipoutente'] = $data['tipo'];
     $_SESSION['sostegno'] = docente_sostegno($data['idutente'], $con);
     $_SESSION['idutente'] = $data['idutente'];
     $_SESSION['dischpwd'] = $data['dischpwd'];
-    // DATI TOKEN
-    $_SESSION['modoinviotoken'] = $data['modoinviotoken'];
-    $_SESSION['schematoken'] = $data['schematoken'];
-    
-    //$passdb = $data['password'];  // TTTT per controllo iniziale alunni
+    $passdb = $data['password'];  // TTTT per controllo iniziale alunni
     // print "Data: $dataultimamodifica - Ora: $dataodierna";
     // print "Diff: $giornidiff";
 
@@ -280,46 +282,6 @@ else  // UTENTE TROVATO
 }
 
 
-//mysqli_close($con);
+mysqli_close($con);
 
-//header("location: ele_ges.php?suffisso=" . $_SESSION['suffisso']);
-
-
-
-
-
-
-
-//if ($controllootp)
-//if (true)    
-if ($_SESSION['modoinviotoken']=='S' |$_SESSION['modoinviotoken']=='M'|$_SESSION['modoinviotoken']=='T')
-{
-    $_SESSION['tentativiotp']=0;
-    $token = rand(10000,99999);
-    $query="update tbl_utenti set token=$token where idutente=".$_SESSION['idutente'];
-    eseguiQuery($con, $query);
-    
-    if ($_SESSION['modoinviotoken']=="M" & ($_SESSION['tipoutente']=='D' | $_SESSION['tipoutente']=='S' | $_SESSION['tipoutente']=='P' ))
-    {
-        
-        $mail= estrai_mail_docente($_SESSION['idutente'], $con);
-        
-        invia_mail($mail, "OTP: $token", "OTP per l'accesso a LampSchool: $token",$indirizzomailfrom);
-    }
-    if ($_SESSION['modoinviotoken']=="S" & ($_SESSION['tipoutente']=='D' | $_SESSION['tipoutente']=='S' | $_SESSION['tipoutente']=='P' ))
-    {
-        
-        $cell= estrai_cell_docente($_SESSION['idutente'], $con);
-        $destinatario= array();
-        $destinatario[] = "39" . trim($cell);
-        $result = skebbyGatewaySendSMS($utentesms, $passsms, $destinatario, "OTP per l'accesso a LampSchool: $token", SMS_TYPE_CLASSIC_PLUS, '', $testatasms, $_SESSION['suffisso']);
-
-    }
-    header("location: otpcheck.php?suffisso=" . $_SESSION['suffisso']);
-} else
-{
-    //print "qui ".$_SESSION['modoinviotoken']."-";die;
-    $_SESSION['tokenok']=true;
-    header("location: ele_ges.php?suffisso=" . $_SESSION['suffisso']);
-}
-
+header("location: ele_ges.php?suffisso=" . $_SESSION['suffisso']);

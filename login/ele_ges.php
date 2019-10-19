@@ -47,11 +47,6 @@ if (isset($_SESSION['suffisso']))
     print "<br><b><big><center>Rieffettuare il <a href='../'>login</a>.</center></big></b>";
 }
 
-// VERIFICO CHE NON SIA RICHIESTO IL TOKEN
-if (!$_SESSION['tokenok'])
-    header("location: login.php?suffisso=" . $_SESSION['suffisso']);
-
-
 
 $con = mysqli_connect($db_server, $db_user, $db_password, $db_nome);
 
@@ -997,7 +992,6 @@ if ($cambiamentopassword)
         if ($livello_scuola == '4')
             menu_item('../password/alu_rigenera_password.php', 'Rigenera e stampa password alunni');
         menu_item('../password/conf_rig_pass_doc.php', 'Rigenera e stampa password docenti');
-        menu_item('../password/CRUDselezioneInvioOTP.php', 'Gestione modalità invio OTP');
         menu_item('../password/gestpwd.php', 'Cambia password utente');
         menu_item('../esame3m/abilitautenteesame.php', 'Abilita utente esame di stato');
         menu_title_end();
